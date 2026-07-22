@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-filing-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-filing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-filing
+  template:
+    metadata:
+      labels:
+        app: postgres-filing
+    spec:
+      containers:
+        - name: postgres-filing
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: filingdb
+            - name: POSTGRES_USER
+              value: filinguser
+            - name: POSTGRES_PASSWORD
+              value: filingpass
+          volumeMounts:
+            - name: filing-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: filing-storage
+          persistentVolumeClaim:
+            claimName: postgres-filing-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-filing
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres-filing
+  ports:
+    - port: 5432
+      targetPort: 5432
