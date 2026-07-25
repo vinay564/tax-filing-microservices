@@ -1,4 +1,4 @@
-﻿server:
+server:
   port: 8081
 
 spring:
@@ -33,12 +33,13 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
+
 eureka:
-    client:
-      service-url:
-       defaultZone: http://eureka-server:8761/eureka/
-    instance:
-      prefer-ip-address: true 
-      hostname: localhost  
-      instance-id: ${spring.application.name}:${server.port}			
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: eureka-server
+    instance-id: ${spring.application.name}:${server.port}

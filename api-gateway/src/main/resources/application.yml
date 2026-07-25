@@ -1,4 +1,4 @@
-﻿server:
+server:
   port: 8080
 
 spring:
@@ -21,6 +21,12 @@ spring:
                 - Path=/payment-service/**
               filters:
                 - StripPrefix=1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
 
 eureka:
   client:
