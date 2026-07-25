@@ -13,8 +13,8 @@ import org.springframework.util.backoff.FixedBackOff;
 public class KafkaErrorHandlingConfig {
 
     @Bean
-    public DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> kafkaTemplate) {
-        KafkaOperations<Object, Object> operations = kafkaTemplate;
+    public DefaultErrorHandler errorHandler(KafkaTemplate<String, Object> kafkaTemplate) {
+        KafkaOperations<String, Object> operations = kafkaTemplate;
 
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(operations,
                 (record, exception) -> new TopicPartition(record.topic() + ".DLT", record.partition()));
