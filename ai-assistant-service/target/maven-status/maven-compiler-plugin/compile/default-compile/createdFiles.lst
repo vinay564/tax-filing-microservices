@@ -1,0 +1,6 @@
+com\uitax\ai\AiAssistantServiceApplication.class
+com\uitax\ai\ClaudeApiClient.class
+com\uitax\ai\AiChatService.class
+com\uitax\ai\ChatResponse.class
+com\uitax\ai\AiChatController.class
+com\uitax\ai\ChatRequest.class

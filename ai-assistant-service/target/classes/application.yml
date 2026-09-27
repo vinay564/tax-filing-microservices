@@ -1,0 +1,30 @@
+server:
+  port: 8095
+
+spring:
+  application:
+    name: ai-assistant-service
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: ai-assistant-service
+    instance-id: ${spring.application.name}:${server.port}
+
+claude:
+  api:
+    key: ${CLAUDE_API_KEY}
+    url: https://api.anthropic.com/v1/messages
+    model: claude-haiku-4-5-20251001
