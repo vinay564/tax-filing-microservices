@@ -2,9 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ai-assistant-service
-  namespace: default
+  labels:
+    app: ai-assistant-service
+    version: v1
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: ai-assistant-service
@@ -19,6 +21,7 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 8095
+          name: http
         env:
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
           value: "http://eureka-server:8761/eureka"
@@ -29,22 +32,38 @@ spec:
               key: api-key
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
             memory: "512Mi"
             cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8095
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8095
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: ai-assistant-service
-  namespace: default
 spec:
   selector:
     app: ai-assistant-service
-  ports:
-  - protocol: TCP
-    port: 8095
-    targetPort: 8095
   type: NodePort
+  ports:
+  - port: 8095
+    targetPort: 8095
+    nodePort: 30095
+    name: http

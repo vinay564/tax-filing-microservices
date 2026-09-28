@@ -2,8 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: notification-service
+  labels:
+    app: notification-service
+    version: v1
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: notification-service
@@ -13,20 +16,48 @@ spec:
         app: notification-service
     spec:
       containers:
-        - name: notification-service
-          image: vinay564/notification-service:1.0
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8083
+      - name: notification-service
+        image: notification-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8082
+          name: http
+        env:
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: "http://eureka-server:8761/eureka"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8082
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: notification-service
 spec:
-  type: ClusterIP
   selector:
     app: notification-service
+  type: ClusterIP
   ports:
-    - port: 8083
-      targetPort: 8083
+  - port: 8082
+    targetPort: 8082
+    name: http

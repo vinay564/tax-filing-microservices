@@ -2,8 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: payment-service
+  labels:
+    app: payment-service
+    version: v1
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: payment-service
@@ -13,20 +16,60 @@ spec:
         app: payment-service
     spec:
       containers:
-        - name: payment-service
-          image: vinay564/payment-service:1.0
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8082
+      - name: payment-service
+        image: payment-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8081
+          name: http
+        env:
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: "http://eureka-server:8761/eureka"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/uitax"
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: payment-service
 spec:
-  type: ClusterIP
   selector:
     app: payment-service
+  type: ClusterIP
   ports:
-    - port: 8082
-      targetPort: 8082
+  - port: 8081
+    targetPort: 8081
+    name: http

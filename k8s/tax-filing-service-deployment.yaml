@@ -2,8 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tax-filing-service
+  labels:
+    app: tax-filing-service
+    version: v1
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: tax-filing-service
@@ -13,20 +16,60 @@ spec:
         app: tax-filing-service
     spec:
       containers:
-        - name: tax-filing-service
-          image: vinay564/tax-filing-service:1.0
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8081
+      - name: tax-filing-service
+        image: tax-filing-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: "http://eureka-server:8761/eureka"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/uitax"
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: tax-filing-service
 spec:
-  type: ClusterIP
   selector:
     app: tax-filing-service
+  type: ClusterIP
   ports:
-    - port: 8081
-      targetPort: 8081
+  - port: 8080
+    targetPort: 8080
+    name: http
